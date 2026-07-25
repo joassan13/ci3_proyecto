@@ -52,3 +52,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $route['default_controller'] = 'welcome';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
+
+// Users CRUD routes
+$route['users'] = 'users/index';
+$route['users/list'] = 'users/list_users';
+$route['users/create'] = 'users/create';
+$route['users/get/(:num)'] = 'users/get/$1';
+$route['users/update/(:num)'] = 'users/update/$1';
+$route['users/delete/(:num)'] = 'users/delete/$1';
+
+// DB connection check
+$route['dbcheck'] = 'dbcheck/index';
