@@ -18,9 +18,19 @@ class Users extends CI_Controller {
     public function list_users()
     {
         $users = $this->user_model->get_all();
+        // Remove password before returning
+        foreach ($users as &$u) {
+            if (isset($u['password'])) unset($u['password']);
+        }
         header('Content-Type: application/json');
         echo json_encode($users);
     }
+
+    // alias for compatibility with view's AJAX URL: users/list
+    // public function list()
+    // {
+    //     $this->list_users();
+    // }
 
     public function create()
     {
@@ -28,6 +38,7 @@ class Users extends CI_Controller {
         $this->form_validation->set_rules('first_name', 'First name', 'required');
         $this->form_validation->set_rules('last_name', 'Last name', 'required');
         $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+        $this->form_validation->set_rules('password', 'Password', 'required|min_length[6]');
 
         if ($this->form_validation->run() === FALSE) {
             $errors = $this->form_validation->error_array();
@@ -42,6 +53,19 @@ class Users extends CI_Controller {
             'phone' => $this->input->post('phone'),
         ];
 
+        // Hash password according to selected algorithm
+        $password = $this->input->post('password');
+        $algo = $this->input->post('hash_algo') ?: 'bcrypt';
+        if ($password !== null) {
+            if ($algo === 'bcrypt') {
+                $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            } elseif (in_array($algo, ['md5','sha1','sha256'])) {
+                $data['password'] = hash($algo, $password);
+            } else {
+                $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            }
+        }
+
         $id = $this->user_model->insert($data);
         echo json_encode(['success' => (bool)$id, 'id' => $id]);
     }
@@ -50,6 +74,7 @@ class Users extends CI_Controller {
     {
         if (!$id) { show_404(); }
         $user = $this->user_model->get($id);
+        if (isset($user['password'])) unset($user['password']);
         echo json_encode($user);
     }
 
@@ -60,6 +85,10 @@ class Users extends CI_Controller {
         $this->form_validation->set_rules('first_name', 'First name', 'required');
         $this->form_validation->set_rules('last_name', 'Last name', 'required');
         $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+        // password is optional on update; only validate if provided
+        if ($this->input->post('password')) {
+            $this->form_validation->set_rules('password', 'Password', 'min_length[6]');
+        }
 
         if ($this->form_validation->run() === FALSE) {
             $errors = $this->form_validation->error_array();
@@ -73,6 +102,19 @@ class Users extends CI_Controller {
             'email' => $this->input->post('email'),
             'phone' => $this->input->post('phone'),
         ];
+
+        // If a new password was provided, hash it before updating
+        $password = $this->input->post('password');
+        $algo = $this->input->post('hash_algo') ?: 'bcrypt';
+        if ($password) {
+            if ($algo === 'bcrypt') {
+                $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            } elseif (in_array($algo, ['md5','sha1','sha256'])) {
+                $data['password'] = hash($algo, $password);
+            } else {
+                $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            }
+        }
 
         $ok = $this->user_model->update($id, $data);
         echo json_encode(['success' => (bool)$ok]);

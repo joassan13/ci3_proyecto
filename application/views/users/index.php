@@ -56,6 +56,19 @@
             <label>Phone</label>
             <input type="text" name="phone" id="phone" class="form-control">
           </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" id="password" class="form-control" placeholder="Leave blank to keep existing on edit">
+          </div>
+          <div class="form-group">
+            <label>Hash algorithm</label>
+            <select name="hash_algo" id="hash_algo" class="form-control">
+              <option value="bcrypt" selected>bcrypt (recommended)</option>
+              <option value="sha256">SHA256</option>
+              <option value="sha1">SHA1</option>
+              <option value="md5">MD5</option>
+            </select>
+          </div>
         </form>
         <div id="formErrors" class="alert alert-danger" style="display:none"></div>
       </div>
