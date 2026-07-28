@@ -66,6 +66,12 @@ $route['users/create'] = 'users/create';
 $route['users/get/(:num)'] = 'users/get/$1';
 $route['users/update/(:num)'] = 'users/update/$1';
 $route['users/delete/(:num)'] = 'users/delete/$1';
+$route['import_csv'] = 'users/import';
+
+// Reports route
+$route['export_csv'] = 'reports/export_csv';
+$route['download_template'] = 'reports/download_template';
+$route['export_pdf'] = 'reports/export_pdf';
 
 // DB connection check
 $route['dbcheck'] = 'dbcheck/index';

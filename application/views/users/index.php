@@ -22,11 +22,21 @@
       <a href="<?= site_url('logout') ?>" class="btn btn-danger" id="btn-logout">Cerrar sesión</a>
     </p>
     <hr>
+    <p>
+      <button class="btn btn-default" id="btn-export-csv">Exportar a Excel (.csv)</button>
+      <button class="btn btn-default" id="btn-export-pdf">Exportar a PDF</button>
+      <button class="btn btn-default" id="btn-download-template">Descargar plantilla (CSV)</button>
+      <label class="btn btn-default" style="margin-left:10px">
+        Importar CSV <input type="file" id="importFile" style="display:none" accept=".csv">
+      </label>
+      <button class="btn btn-primary" id="btn-import">Ejecutar importación</button>
+    </p>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped table-hover" id="users-table">
         <thead>
           <tr>
+            <th><input type="checkbox" id="select-all"></th>
             <th>Nombre</th>
             <th>Apellido</th>
             <th>Correo</th>
@@ -188,6 +198,10 @@
           });
         },
         columns: [
+          { data: 'id', orderable: false, searchable: false, render: function(data, type, row) {
+              return '<input type="checkbox" class="row-select" data-id="'+row.id+'">';
+            }
+          },
           { data: 'first_name' },
           { data: 'last_name' },
           { data: 'email' },
@@ -330,6 +344,67 @@
           },
           error: function() { alert('Fallo en la solicitud de eliminación'); }
         });
+      });
+
+      // Select all toggle
+      $('#select-all').on('change', function() {
+        var checked = $(this).is(':checked');
+        $('.row-select').prop('checked', checked);
+      });
+
+      // When table redraws, clear select-all
+      table.on('draw', function() { $('#select-all').prop('checked', false); });
+
+      function getSelectedIds() {
+        var ids = [];
+        $('.row-select:checked').each(function() { ids.push($(this).data('id')); });
+        return ids;
+      }
+
+      // Export CSV (Excel-compatible)
+      $('#btn-export-csv').click(function() {
+        var ids = getSelectedIds();
+        var url = '<?= site_url('export_csv') ?>';
+        if (ids.length) url += '?ids=' + ids.join(',');
+        window.location = url;
+      });
+
+      // Download template
+      $('#btn-download-template').click(function() {
+        window.location = '<?= site_url('download_template') ?>';
+      });
+
+      // Import flow
+      $('#btn-import').click(function() {
+        var file = $('#importFile')[0].files[0];
+        if (!file) { alert('Seleccione un archivo CSV para importar'); return; }
+        var formData = new FormData(); formData.append('file', file);
+        $.ajax({
+          url: '<?= site_url('import_csv') ?>',
+          type: 'POST',
+          data: formData,
+          contentType: false,
+          processData: false,
+          dataType: 'json',
+          success: function(resp) {
+            if (resp.success) {
+              alert('Importación finalizada. Insertados: ' + resp.inserted + '. Errores: ' + resp.errors.length);
+              table.ajax.reload(null, false);
+              loadCharts();
+            } else {
+              alert('Error: ' + (resp.error || 'Desconocido'));
+            }
+          },
+          error: function() { alert('Fallo en la importación'); }
+        });
+      });
+
+      // Export PDF placeholder (opens a printable view)
+      $('#btn-export-pdf').click(function() {
+        var ids = getSelectedIds();
+        var url = '<?= site_url('export_pdf') ?>';
+        if (ids.length) url += '?ids=' + ids.join(',');
+        window.open(url, '_blank');
       });
 
       // DB check

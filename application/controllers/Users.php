@@ -184,4 +184,91 @@ class Users extends CI_Controller {
         echo json_encode(['total' => $total, 'by_gender' => $by_gender]);
     }
 
+    // Import users from uploaded CSV (expects header row). Returns JSON report.
+    public function import()
+    {
+        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'error' => 'No file uploaded or upload error']);
+            return;
+        }
+
+        $tmp = $_FILES['file']['tmp_name'];
+        $handle = fopen($tmp, 'r');
+        if (!$handle) {
+            echo json_encode(['success' => false, 'error' => 'Unable to open uploaded file']);
+            return;
+        }
+
+        $header = fgetcsv($handle);
+        if (!$header) {
+            echo json_encode(['success' => false, 'error' => 'Empty CSV file']);
+            fclose($handle);
+            return;
+        }
+
+        // Normalize header
+        $header = array_map(function($h){ return strtolower(trim($h)); }, $header);
+        $expected = ['first_name','last_name','email','phone','rfc','curp','gender'];
+        // Map columns to expected names
+        $map = [];
+        foreach ($expected as $col) {
+            $idx = array_search($col, $header);
+            // if ($idx === false) {
+            //     echo json_encode(['success' => false, 'error' => 'Cabeceras inválidas. Se requiere: ' . implode(',', $expected)]);
+            //     fclose($handle);
+            //     return;
+            // }
+            $map[$col] = $idx;
+        }
+
+        $inserted = 0; $errors = [];
+
+        // Patterns (same as validation rules)
+        $rfc_pattern = '/^([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})$/i';
+        $curp_pattern = '/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]{2}$/i';
+        $phone_pattern = '/^[0-9]{10}$/';
+
+        $rowNum = 1;
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNum++;
+            $data = [];
+            foreach ($expected as $col) {
+                $data[$col] = isset($row[$map[$col]]) ? trim($row[$map[$col]]) : '';
+            }
+
+            // Basic validation
+            $rowErrors = [];
+            if ($data['first_name'] === '') $rowErrors[] = 'first_name required';
+            if ($data['last_name'] === '') $rowErrors[] = 'last_name required';
+            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $rowErrors[] = 'invalid email';
+            if (!preg_match($phone_pattern, $data['phone'])) $rowErrors[] = 'invalid phone';
+            if (!preg_match($rfc_pattern, $data['rfc'])) $rowErrors[] = 'invalid rfc';
+            if (!preg_match($curp_pattern, $data['curp'])) $rowErrors[] = 'invalid curp';
+            if (!in_array($data['gender'], ['M','F','O'])) $rowErrors[] = 'invalid gender';
+
+            if (!empty($rowErrors)) {
+                $errors[] = ['row' => $rowNum, 'errors' => $rowErrors];
+                continue;
+            }
+
+            // Prepare insert array compatible with model
+            $ins = [
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'],
+                'rfc' => $data['rfc'],
+                'curp' => $data['curp'],
+                'gender' => $data['gender'],
+                'password' => ''
+            ];
+            $this->user_model->insert($ins);
+            $inserted++;
+        }
+
+        fclose($handle);
+        echo json_encode(['success' => true, 'inserted' => $inserted, 'errors' => $errors]);
+    }
+
+
 }
