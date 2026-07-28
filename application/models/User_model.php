@@ -36,4 +36,17 @@ class User_model extends CI_Model {
         return $this->db->where('id', $id)->delete($this->table);
     }
 
+    public function count_all()
+    {
+        return $this->db->count_all($this->table);
+    }
+
+    public function count_group_by($field)
+    {
+        $this->db->select("$field, COUNT(*) as count");
+        $this->db->from($this->table);
+        $this->db->group_by($field);
+        return $this->db->get()->result_array();
+    }
+
 }
