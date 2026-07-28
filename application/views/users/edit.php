@@ -12,7 +12,7 @@
     </div>
 
     <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">Correo electrónico</label>
         <input type="email" name="email" id="email" class="form-control" value="<?= set_value('email', $user['email']) ?>">
     </div>
 
@@ -42,7 +42,7 @@
     </div>
 
     <div class="form-group">
-        <label for="password">Password (dejar en blanco para no cambiar)</label>
+        <label for="password">Contraseña (dejar en blanco para no cambiar)</label>
         <input type="password" name="password" id="password" class="form-control">
     </div>
 

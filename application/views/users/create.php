@@ -11,7 +11,7 @@
     </div>
 
     <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">Correo electrónico</label>
         <input type="email" name="email" id="email" class="form-control" value="<?= set_value('email') ?>">
     </div>
 
@@ -41,7 +41,7 @@
     </div>
 
     <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">Contraseña</label>
         <input type="password" name="password" id="password" class="form-control">
     </div>
 
