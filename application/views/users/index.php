@@ -10,8 +10,9 @@
 <div class="container">
     <h2 class="page-header">Users CRUD (AJAX + jQuery)</h2>
     <p>
-        <a href="/dbcheck" class="btn btn-default" id="btn-dbcheck">Check DB connection</a>
-        <button class="btn btn-primary" id="btn-add">Add user</button>
+      <a href="/dbcheck" class="btn btn-default" id="btn-dbcheck">Check DB connection</a>
+      <button class="btn btn-primary" id="btn-add">Crear (modal)</button>
+      <a href="<?= base_url('users/create_view') ?>" class="btn btn-success" id="btn-add-view">Crear (vista)</a>
     </p>
 
     <table class="table table-bordered" id="users-table">
@@ -27,7 +28,18 @@
         </thead>
         <tbody></tbody>
     </table>
-</div>
+
+    <hr>
+    <h4>Gráficas</h4>
+    <div class="row">
+      <div class="col-sm-6">
+        <canvas id="genderChart" width="400" height="300"></canvas>
+      </div>
+      <div class="col-sm-6">
+        <canvas id="totalChart" width="400" height="300"></canvas>
+      </div>
+    </div>
+  </div>
 
 <!-- Modal -->
 <div id="userModal" class="modal fade" role="dialog">
@@ -57,6 +69,23 @@
             <input type="text" name="phone" id="phone" class="form-control">
           </div>
           <div class="form-group">
+            <label>RFC</label>
+            <input type="text" name="rfc" id="rfc" class="form-control" maxlength="13">
+          </div>
+          <div class="form-group">
+            <label>CURP</label>
+            <input type="text" name="curp" id="curp" class="form-control" maxlength="18">
+          </div>
+          <div class="form-group">
+            <label>Sexo</label>
+            <select name="gender" id="gender" class="form-control">
+              <option value="">Seleccione...</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+              <option value="O">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Password</label>
             <input type="password" name="password" id="password" class="form-control" placeholder="Leave blank to keep existing on edit">
           </div>
@@ -82,6 +111,7 @@
 
 <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <script>
 function loadUsers() {
   $.ajax({
@@ -97,7 +127,8 @@ function loadUsers() {
           '<td>'+u.last_name+'</td>'+
           '<td>'+u.email+'</td>'+
           '<td>'+ (u.phone||'') +'</td>'+
-          '<td><button class="btn btn-xs btn-info btn-edit" data-id="'+u.id+'">Edit</button> '
+          '<td><button class="btn btn-xs btn-info btn-edit" data-id="'+u.id+'">Editar (modal)</button> '
+          +'<a href="<?= base_url('users/edit_view') ?>/'+u.id+'" class="btn btn-xs btn-primary">Editar (vista)</a> '
           +'<button class="btn btn-xs btn-danger btn-delete" data-id="'+u.id+'">Delete</button></td>'+
           '</tr>';
       });
@@ -110,7 +141,40 @@ function loadUsers() {
 }
 
 $(function(){
-    loadUsers();
+  loadUsers();
+
+  // Load chart data and render charts
+  function loadCharts() {
+    $.ajax({
+      url: '<?= base_url('users/chart_data') ?>',
+      type: 'GET',
+      dataType: 'json',
+      success: function(data){
+        var labels = [];
+        var counts = [];
+        data.by_gender.forEach(function(g){ labels.push(g.gender||'N/A'); counts.push(g.count); });
+        var ctx = document.getElementById('genderChart').getContext('2d');
+        // if (window.genderChart) window.genderChart.destroy();
+        window.genderChart = new Chart(ctx, {
+          type: 'pie',
+          data: { labels: labels, datasets: [{ data: counts, backgroundColor: ['#36A2EB','#FF6384','#FFCE56'] }] },
+          options: { responsive: true }
+        });
+
+        var ctx2 = document.getElementById('totalChart').getContext('2d');
+        // if (window.totalChart) window.totalChart.destroy();
+        window.totalChart = new Chart(ctx2, {
+          type: 'doughnut',
+          data: { labels: ['Usuarios'], datasets: [{ data: [data.total], backgroundColor: ['#4BC0C0'] }] },
+          options: { responsive: true }
+        });
+      },
+      error: function(){ console.warn('Failed to load chart data'); }
+    });
+  }
+
+  // Initial charts
+  loadCharts();
 
     $('#btn-add').click(function(){
         $('#modalTitle').text('Add user');
@@ -133,6 +197,9 @@ $(function(){
           $('#last_name').val(data.last_name);
           $('#email').val(data.email);
           $('#phone').val(data.phone);
+          $('#rfc').val(data.rfc || '');
+          $('#curp').val(data.curp || '');
+          $('#gender').val(data.gender || '');
           $('#formErrors').hide();
           $('#userModal').modal('show');
         },
@@ -152,6 +219,7 @@ $(function(){
           if (resp.success) {
             $('#userModal').modal('hide');
             loadUsers();
+            loadCharts();
           } else {
             var txt = '';
             if (resp.errors) { for (var k in resp.errors) txt += resp.errors[k] + '<br>'; }
@@ -171,7 +239,7 @@ $(function(){
         url: '<?php echo base_url('users/delete'); ?>/' + id,
         type: 'POST',
         dataType: 'json',
-        success: function(resp){ if (resp.success) loadUsers(); else alert('Delete failed'); },
+        success: function(resp){ if (resp.success) { loadUsers(); loadCharts(); } else alert('Delete failed'); },
         error: function(){ alert('Delete request failed'); }
       });
     });
