@@ -155,6 +155,15 @@ class Users extends CI_Controller {
         }
 
         $ok = $this->user_model->update($id, $data);
+
+        $sess = [
+            // 'id' => $user['id'],
+            // 'email' => $user['email'],
+            'first_name' => isset($data['first_name']) ? $data['first_name'] : '',
+            'last_name' => isset($data['last_name']) ? $data['last_name'] : ''
+        ];
+        $this->session->set_userdata('user', $sess);
+
         echo json_encode(['success' => (bool)$ok]);
     }
 

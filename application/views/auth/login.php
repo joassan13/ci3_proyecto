@@ -10,7 +10,7 @@
   <div class="container">
     <div class="row">
       <div class="col-sm-6 col-sm-offset-3" style="margin-top:40px">
-        <div class="panel panel-default">
+        <div class="panel panel-primary">
           <div class="panel-heading"><h3 class="panel-title">Iniciar sesión</h3></div>
           <div class="panel-body">
             <?php if ($this->session->flashdata('login_error')): ?>

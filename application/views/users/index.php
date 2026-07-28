@@ -13,12 +13,15 @@
 <body>
   <div class="container">
     <h2 class="page-header">CRUD de Usuarios (AJAX + jQuery)</h2>
+    <hr>
+    <h3>Bienvenido, <?= $this->session->userdata('user')['first_name'] ?> <?= $this->session->userdata('user')['last_name'] ?>. ¿Qué deseas hacer?</h3>
     <p>
       <a href="/dbcheck" class="btn btn-default" id="btn-dbcheck">Verificar conexión BD</a>
       <button class="btn btn-primary" id="btn-add">Crear (modal)</button>
       <a href="<?= base_url('users/create_view') ?>" class="btn btn-success" id="btn-add-view">Crear (vista)</a>
       <a href="<?= site_url('logout') ?>" class="btn btn-danger" id="btn-logout">Cerrar sesión</a>
     </p>
+    <hr>
 
     <div class="table-responsive">
       <table class="table table-bordered table-striped table-hover" id="users-table">
@@ -55,7 +58,7 @@
   <div id="userModal" class="modal fade" role="dialog">
     <div class="modal-dialog">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header" id="modalHeader">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
           <h4 class="modal-title" id="modalTitle">Crear usuario</h4>
         </div>
@@ -137,6 +140,14 @@
             </div>
           </form>
           <div id="formErrors" class="alert alert-danger" style="display:none"></div>
+          <div>
+            <h4>Algunos ejemplos de RFC y CURP para pruebas:</h4>
+            <ul>
+              <li>RFC: YKSA211220XF8, CURP: GEGN460209MGRFKA97</li>
+              <li>RFC: OFSA321017ER6, CURP: VBNJ801105HMCBYT57</li>
+              <li>RFC: MAMM8001011H0, CURP: MAMM800101HMCLNS09</li>
+            </ul>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
@@ -247,6 +258,7 @@
         $('#userForm')[0].reset();
         $('#user_id').val('');
         $('#formErrors').hide();
+        $('#modalHeader').removeClass('bg-info').addClass('bg-success');
         $('#userModal').modal('show');
       });
 
@@ -259,6 +271,7 @@
           dataType: 'json',
           success: function(data) {
             $('#modalTitle').text('Editar usuario');
+            $('#modalHeader').removeClass('bg-success').addClass('bg-info');
             $('#user_id').val(data.id);
             $('#first_name').val(data.first_name);
             $('#last_name').val(data.last_name);

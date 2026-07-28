@@ -15,7 +15,7 @@
     <div class="container">
         <div class="row">
             <div class="col-sm-8 col-sm-offset-2">
-                <div class="panel panel-default">
+                <div class="panel panel-success">
                     <div class="panel-heading">
                         <h3 class="panel-title">Crear usuario</h3>
                     </div>
@@ -24,7 +24,7 @@
                             <div class="alert alert-danger"><?= validation_errors(); ?></div>
                         <?php endif; ?>
 
-                        <form method="post" action="<?= site_url('users/create') ?>" class="form-horizontal" role="form">
+                        <form id="userCreateForm" method="post" action="<?= site_url('users/create') ?>" class="form-horizontal" role="form">
                             <div class="form-group">
                                 <label for="first_name" class="col-sm-3 control-label">Nombre</label>
                                 <div class="col-sm-9">
@@ -81,10 +81,19 @@
 
                             <div class="form-group">
                                 <label for="password" class="col-sm-3 control-label">Contraseña</label>
-                                <div class="col-sm-9">
+                                <div class="col-sm-6">
                                     <input type="password" name="password" id="password" class="form-control">
                                 </div>
+                                <div class="col-sm-3">
+                                    <select name="hash_algo" id="hash_algo" class="form-control">
+                                        <option value="bcrypt" selected>bcrypt</option>
+                                        <option value="sha256">SHA256</option>
+                                        <option value="sha1">SHA1</option>
+                                        <option value="md5">MD5</option>
+                                    </select>
+                                </div>
                             </div>
+                            <div id="formErrors" class="alert alert-danger" style="display:none"></div>
 
                             <div class="form-group">
                                 <div class="col-sm-offset-3 col-sm-9">
@@ -93,12 +102,47 @@
                                 </div>
                             </div>
                         </form>
+                        <div>
+                            <h4>Algunos ejemplos de RFC y CURP para pruebas:</h4>
+                            <ul>
+                            <li>RFC: GDTY560925WRA, CURP: TJSA730203HCMWTZ44</li>
+                            <li>RFC: JZNR330103HO4, CURP: DGRR821205HQTIIW53</li>
+                            <li>RFC: ONVB050919UK0, CURP: USFC750302HTLAGR97</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
+</div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(function(){
+            $('#userCreateForm').on('submit', function(e){
+                e.preventDefault();
+                $('#formErrors').hide().empty();
+                var $f = $(this);
+                $.ajax({
+                    url: $f.attr('action'),
+                    type: 'POST',
+                    data: $f.serialize(),
+                    dataType: 'json',
+                    success: function(resp){
+                        if (resp.success) {
+                            window.location.href = '<?= site_url('users') ?>';
+                        } else {
+                            var txt = '';
+                            if (resp.errors) { for (var k in resp.errors) txt += resp.errors[k] + '<br>'; }
+                            else if (resp.error) txt = resp.error;
+                            else txt = 'Error desconocido';
+                            $('#formErrors').html(txt).show();
+                        }
+                    },
+                    error: function(){ $('#formErrors').html('Fallo en la solicitud').show(); }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
