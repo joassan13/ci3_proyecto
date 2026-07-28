@@ -17,6 +17,7 @@
       <a href="/dbcheck" class="btn btn-default" id="btn-dbcheck">Verificar conexión BD</a>
       <button class="btn btn-primary" id="btn-add">Crear (modal)</button>
       <a href="<?= base_url('users/create_view') ?>" class="btn btn-success" id="btn-add-view">Crear (vista)</a>
+      <a href="<?= site_url('logout') ?>" class="btn btn-danger" id="btn-logout">Cerrar sesión</a>
     </p>
 
     <div class="table-responsive">
@@ -197,7 +198,7 @@
           }
         ],
         lengthMenu: [ [10, 25, 50], [10, 25, 50] ],
-        pageLength: 2
+        pageLength: 5
       });
 
       // Charts loader
