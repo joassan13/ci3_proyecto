@@ -61,51 +61,78 @@
         <div class="modal-body">
           <form id="userForm">
             <input type="hidden" name="id" id="user_id">
-            <div class="form-group">
-              <label>Nombre</label>
-              <input type="text" name="first_name" id="first_name" class="form-control">
+            <div class="row">
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label>Nombre</label>
+                  <input type="text" name="first_name" id="first_name" class="form-control">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label>Apellido</label>
+                  <input type="text" name="last_name" id="last_name" class="form-control">
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Apellido</label>
-              <input type="text" name="last_name" id="last_name" class="form-control">
+            <div class="row">
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label>Correo</label>
+                  <input type="email" name="email" id="email" class="form-control">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label>Teléfono</label>
+                  <input type="text" name="phone" id="phone" class="form-control" maxlength="10">
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Correo</label>
-              <input type="email" name="email" id="email" class="form-control">
+            <div class="row">
+              <div class="col-sm-4">
+                <div class="form-group">
+                  <label>RFC</label>
+                  <input type="text" name="rfc" id="rfc" class="form-control" maxlength="13">
+                </div>
+              </div>
+              <div class="col-sm-5">
+                <div class="form-group">
+                  <label>CURP</label>
+                  <input type="text" name="curp" id="curp" class="form-control" maxlength="18">
+                </div>
+              </div>
+              <div class="col-sm-3">
+                <div class="form-group">
+                  <label>Sexo</label>
+                  <select name="gender" id="gender" class="form-control">
+                    <option value="">Seleccione...</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                    <option value="O">Otro</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label>Teléfono</label>
-              <input type="text" name="phone" id="phone" class="form-control">
-            </div>
-            <div class="form-group">
-              <label>RFC</label>
-              <input type="text" name="rfc" id="rfc" class="form-control" maxlength="13">
-            </div>
-            <div class="form-group">
-              <label>CURP</label>
-              <input type="text" name="curp" id="curp" class="form-control" maxlength="18">
-            </div>
-            <div class="form-group">
-              <label>Sexo</label>
-              <select name="gender" id="gender" class="form-control">
-                <option value="">Seleccione...</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-                <option value="O">Otro</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Contraseña</label>
-              <input type="password" name="password" id="password" class="form-control" placeholder="Dejar en blanco para mantener la contraseña actual">
-            </div>
-            <div class="form-group">
-              <label>Algoritmo de hash</label>
-              <select name="hash_algo" id="hash_algo" class="form-control">
-                <option value="bcrypt" selected>bcrypt (recomendado)</option>
-                <option value="sha256">SHA256</option>
-                <option value="sha1">SHA1</option>
-                <option value="md5">MD5</option>
-              </select>
+            <div class="row">
+              <div class="col-sm-7">
+                <div class="form-group">
+                  <label>Contraseña</label>
+                  <input type="password" name="password" id="password" class="form-control" placeholder="">
+                  <small class="form-text text-muted">La contraseña debe tener al menos 6 caracteres. Si se deja en blanco, no se cambiará.</small>
+                </div>
+              </div>
+              <div class="col-sm-5">
+                <div class="form-group">
+                  <label>Algoritmo de hash</label>
+                  <select name="hash_algo" id="hash_algo" class="form-control">
+                    <option value="bcrypt" selected>bcrypt (recomendado)</option>
+                    <option value="sha256">SHA256</option>
+                    <option value="sha1">SHA1</option>
+                    <option value="md5">MD5</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </form>
           <div id="formErrors" class="alert alert-danger" style="display:none"></div>
