@@ -5,7 +5,9 @@
 <head>
   <meta charset="utf-8">
   <title>CRUD de Usuarios</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.11/css/dataTables.bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.1/css/responsive.bootstrap.min.css">
 </head>
 
 <body>
@@ -17,19 +19,23 @@
       <a href="<?= base_url('users/create_view') ?>" class="btn btn-success" id="btn-add-view">Crear (vista)</a>
     </p>
 
-    <table class="table table-bordered" id="users-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Apellido</th>
-          <th>Correo</th>
-          <th>Teléfono</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover" id="users-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>RFC</th>
+            <th>CURP</th>
+            <th>Sexo</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
     <hr>
     <h4>Gráficas</h4>
@@ -112,41 +118,62 @@
     </div>
   </div>
 
-  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+
+  <!-- DataTables -->
+  <script src="https://cdn.datatables.net/1.13.11/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.11/js/dataTables.bootstrap.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.1/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.1/js/responsive.bootstrap.min.js"></script>
+
   <script>
-    function loadUsers() {
-      $.ajax({
-        url: '<?php echo base_url('users/list'); ?>',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-          var tbody = '';
-          $.each(data, function(i, u) {
-            tbody += '<tr>' +
-              '<td>' + u.id + '</td>' +
-              '<td>' + u.first_name + '</td>' +
-              '<td>' + u.last_name + '</td>' +
-              '<td>' + u.email + '</td>' +
-              '<td>' + (u.phone || '') + '</td>' +
-              '<td><button class="btn btn-xs btn-info btn-edit" data-id="' + u.id + '">Editar (modal)</button> ' +
-              '<a href="<?= base_url('users/edit_view') ?>/' + u.id + '" class="btn btn-xs btn-primary">Editar (vista)</a> ' +
-              '<button class="btn btn-xs btn-danger btn-delete" data-id="' + u.id + '">Eliminar</button></td>' +
-              '</tr>';
-          });
-          $('#users-table tbody').html(tbody);
-        },
-        error: function() {
-          alert('Error al cargar usuarios');
-        }
-      });
-    }
-
     $(function() {
-      loadUsers();
+      // Initialize DataTable using $.ajax in the ajax function
+      var table = $('#users-table').DataTable({
+        responsive: true,
+        processing: true,
+        ajax: function(data, callback, settings) {
+          $.ajax({
+            url: '<?php echo base_url('users/list_users'); ?>',
+            type: 'GET',
+            dataType: 'json',
+            success: function(res) {
+              callback({ data: res });
+            },
+            error: function() {
+              alert('Error al cargar usuarios');
+              callback({ data: [] });
+            }
+          });
+        },
+        columns: [
+          { data: 'first_name' },
+          { data: 'last_name' },
+          { data: 'email' },
+          { data: 'phone', defaultContent: '' },
+          { data: 'rfc', defaultContent: '' },
+          { data: 'curp', defaultContent: '' },
+          { data: 'gender', render: function(d) {
+              if (d === 'M') return 'Masculino';
+              if (d === 'F') return 'Femenino';
+              if (d === 'O') return 'Otro';
+              return '';
+            }
+          },
+          { data: null, orderable: false, searchable: false, render: function(data, type, row) {
+              return '<button class="btn btn-xs btn-info btn-edit" data-id="'+row.id+'">Editar (modal)</button> '
+                + '<a href="<?= base_url('users/edit_view') ?>/'+row.id+'" class="btn btn-xs btn-primary">Editar (vista)</a> '
+                + '<button class="btn btn-xs btn-danger btn-delete" data-id="'+row.id+'">Eliminar</button>';
+            }
+          }
+        ],
+        lengthMenu: [ [10, 25, 50], [10, 25, 50] ],
+        pageLength: 2
+      });
 
-      // Load chart data and render charts
+      // Charts loader
       function loadCharts() {
         $.ajax({
           url: '<?= base_url('users/chart_data') ?>',
@@ -156,7 +183,6 @@
             var labels = [];
             var counts = [];
             data.by_gender.forEach(function(g) {
-              // labels.push(g.gender || 'N/A');
               if (g.gender === 'M') labels.push('Masculino');
               else if (g.gender === 'F') labels.push('Femenino');
               else labels.push('Otro');
@@ -168,41 +194,26 @@
               type: 'pie',
               data: {
                 labels: labels,
-                datasets: [{
-                  data: counts,
-                  backgroundColor: ['#FFCE56', '#FF6384', '#36A2EB', ]
-                }]
+                datasets: [{ data: counts, backgroundColor: ['#FFCE56', '#FF6384', '#36A2EB'] }]
               },
-              options: {
-                responsive: true
-              }
+              options: { responsive: true }
             });
 
             var ctx2 = document.getElementById('totalChart').getContext('2d');
             // if (window.totalChart) window.totalChart.destroy();
             window.totalChart = new Chart(ctx2, {
               type: 'doughnut',
-              data: {
-                labels: ['Usuarios'],
-                datasets: [{
-                  data: [data.total],
-                  backgroundColor: ['#4BC0C0']
-                }]
-              },
-              options: {
-                responsive: true
-              }
+              data: { labels: ['Usuarios'], datasets: [{ data: [data.total], backgroundColor: ['#4BC0C0'] }] },
+              options: { responsive: true }
             });
           },
-          error: function() {
-            console.warn('No se pudo cargar datos de la gráfica');
-          }
+          error: function() { console.warn('No se pudo cargar datos de la gráfica'); }
         });
       }
 
-      // Initial charts
       loadCharts();
 
+      // New user modal
       $('#btn-add').click(function() {
         $('#modalTitle').text('Crear usuario');
         $('#userForm')[0].reset();
@@ -211,7 +222,8 @@
         $('#userModal').modal('show');
       });
 
-      $(document).on('click', '.btn-edit', function() {
+      // Edit (delegated)
+      $('#users-table tbody').on('click', '.btn-edit', function() {
         var id = $(this).data('id');
         $.ajax({
           url: '<?php echo base_url('users/get'); ?>/' + id,
@@ -230,12 +242,11 @@
             $('#formErrors').hide();
             $('#userModal').modal('show');
           },
-          error: function() {
-            alert('Error al obtener usuario');
-          }
+          error: function() { alert('Error al obtener usuario'); }
         });
       });
 
+      // Save (create/update)
       $('#saveBtn').click(function() {
         var id = $('#user_id').val();
         var url = id ? '<?php echo base_url('users/update'); ?>/' + id : '<?php echo base_url('users/create'); ?>';
@@ -247,7 +258,7 @@
           success: function(resp) {
             if (resp.success) {
               $('#userModal').modal('hide');
-              loadUsers();
+              table.ajax.reload(null, false);
               loadCharts();
             } else {
               var txt = '';
@@ -258,14 +269,13 @@
               $('#formErrors').html(txt).show();
             }
           },
-          error: function() {
-            alert('Error al guardar');
-          }
+          error: function() { alert('Error al guardar'); }
         });
       });
 
-      $(document).on('click', '.btn-delete', function() {
-          if (!confirm('¿Eliminar este usuario?')) return;
+      // Delete (delegated)
+      $('#users-table tbody').on('click', '.btn-delete', function() {
+        if (!confirm('¿Eliminar este usuario?')) return;
         var id = $(this).data('id');
         $.ajax({
           url: '<?php echo base_url('users/delete'); ?>/' + id,
@@ -273,29 +283,19 @@
           dataType: 'json',
           success: function(resp) {
             if (resp.success) {
-              loadUsers();
+              table.ajax.reload(null, false);
               loadCharts();
-                } else alert('Error al eliminar');
+            } else alert('Error al eliminar');
           },
-          error: function() {
-                alert('Fallo en la solicitud de eliminación');
-          }
+          error: function() { alert('Fallo en la solicitud de eliminación'); }
         });
       });
 
-      $('#btn-dbcheck').click(function(e) {
-        e.preventDefault();
-        $.ajax({
-          url: '<?php echo base_url('dbcheck'); ?>',
-          type: 'GET',
-          dataType: 'json',
-          success: function(r) {
-            if (r.connected) alert('Base de datos conectada');
-            else alert('BD no conectada: ' + (r.error || 'desconocido'));
-          },
-          error: function() {
-            alert('Fallo al verificar BD');
-          }
+      // DB check
+      $('#btn-dbcheck').click(function(e) { e.preventDefault();
+        $.ajax({ url: '<?php echo base_url('dbcheck'); ?>', type: 'GET', dataType: 'json',
+          success: function(r) { if (r.connected) alert('Base de datos conectada'); else alert('BD no conectada: ' + (r.error || 'desconocido')); },
+          error: function() { alert('Fallo al verificar BD'); }
         });
       });
     });
