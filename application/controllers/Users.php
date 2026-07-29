@@ -59,7 +59,7 @@ class Users extends CI_Controller {
         $this->load->library('form_validation');
         $this->form_validation->set_rules('first_name', 'First name', 'required');
         $this->form_validation->set_rules('last_name', 'Last name', 'required');
-        $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|callback_email_unique');
         // Additional rules: RFC, CURP, phone, gender
         $this->form_validation->set_rules('rfc', 'RFC', "trim|required|regex_match[/^([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})$/i]");
         $this->form_validation->set_rules('curp', 'CURP', "trim|required|regex_match[/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]{2}$/i]");
@@ -97,6 +97,20 @@ class Users extends CI_Controller {
         }
 
         $id = $this->user_model->insert($data);
+
+        // If insert failed, check DB error to detect unique constraint violation.
+        // This covers race conditions where two requests pass validation
+        // but the DB rejects a duplicate (MySQL error code 1062).
+        if (!$id) {
+            $dberr = $this->db->error();
+            if (isset($dberr['code']) && $dberr['code'] == 1062) {
+                echo json_encode(['success' => false, 'errors' => ['email' => 'Correo electrónico en uso (DB constraint)']]);
+                return;
+            }
+            echo json_encode(['success' => false, 'errors' => ['db' => 'Falla en inserción']]);
+            return;
+        }
+
         echo json_encode(['success' => (bool)$id, 'id' => $id]);
     }
 
@@ -114,7 +128,7 @@ class Users extends CI_Controller {
         $this->load->library('form_validation');
         $this->form_validation->set_rules('first_name', 'First name', 'required');
         $this->form_validation->set_rules('last_name', 'Last name', 'required');
-        $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|callback_email_unique['.$id.']');
         // Additional rules for update
         $this->form_validation->set_rules('rfc', 'RFC', "trim|required|regex_match[/^([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})$/i]");
         $this->form_validation->set_rules('curp', 'CURP', "trim|required|regex_match[/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]{2}$/i]");
@@ -156,9 +170,18 @@ class Users extends CI_Controller {
 
         $ok = $this->user_model->update($id, $data);
 
+        // If update failed, inspect DB error for duplicate-key (1062).
+        if ($ok === FALSE) {
+            $dberr = $this->db->error();
+            if (isset($dberr['code']) && $dberr['code'] == 1062) {
+                echo json_encode(['success' => false, 'errors' => ['email' => 'Correo electrónico en uso (DB constraint)']]);
+                return;
+            }
+            echo json_encode(['success' => false, 'errors' => ['db' => 'Falla en actualización']]);
+            return;
+        }
+
         $sess = [
-            // 'id' => $user['id'],
-            // 'email' => $user['email'],
             'first_name' => isset($data['first_name']) ? $data['first_name'] : '',
             'last_name' => isset($data['last_name']) ? $data['last_name'] : ''
         ];
@@ -182,6 +205,23 @@ class Users extends CI_Controller {
 
         header('Content-Type: application/json');
         echo json_encode(['total' => $total, 'by_gender' => $by_gender]);
+    }
+
+    // Callback for form validation: ensure email is unique.
+    // When updating, pass the current user id as parameter: callback_email_unique[123]
+    public function email_unique($email, $id = null)
+    {
+        $existing = $this->user_model->get_by_email($email);
+        if ($existing) {
+            // If updating the same record, it's allowed
+            if ($id !== null && isset($existing['id']) && (string)$existing['id'] === (string)$id) {
+                return TRUE;
+            }
+            $this->load->library('form_validation');
+            $this->form_validation->set_message('email_unique', 'El %s ya está en uso');
+            return FALSE;
+        }
+        return TRUE;
     }
 
     // Import users from uploaded CSV (expects header row). Returns JSON report.
@@ -222,6 +262,7 @@ class Users extends CI_Controller {
         }
 
         $inserted = 0; $errors = [];
+        $seen_emails = [];
 
         // Patterns (same as validation rules)
         $rfc_pattern = '/^([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})$/i';
@@ -241,6 +282,11 @@ class Users extends CI_Controller {
             if ($data['first_name'] === '') $rowErrors[] = 'first_name required';
             if ($data['last_name'] === '') $rowErrors[] = 'last_name required';
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) $rowErrors[] = 'invalid email';
+            // Check uniqueness: already in DB or duplicated in this import
+            $email_lower = strtolower($data['email']);
+            if (in_array($email_lower, $seen_emails) || $this->user_model->get_by_email($data['email'])) {
+                $rowErrors[] = 'email already exists';
+            }
             if (!preg_match($phone_pattern, $data['phone'])) $rowErrors[] = 'invalid phone';
             if (!preg_match($rfc_pattern, $data['rfc'])) $rowErrors[] = 'invalid rfc';
             if (!preg_match($curp_pattern, $data['curp'])) $rowErrors[] = 'invalid curp';
@@ -262,8 +308,22 @@ class Users extends CI_Controller {
                 'gender' => $data['gender'],
                 'password' => ''
             ];
-            $this->user_model->insert($ins);
+            // Try inserting the row. If the DB rejects it due to the unique
+            // constraint (e.g. concurrent insert), record the error for this row
+            // and continue with the next one instead of failing the whole import.
+            $res = $this->user_model->insert($ins);
+            if (!$res) {
+                $dberr = $this->db->error();
+                if (isset($dberr['code']) && $dberr['code'] == 1062) {
+                    $errors[] = ['row' => $rowNum, 'errors' => ['correo electrónico en uso (restricción DB)']];
+                    continue;
+                }
+                $errors[] = ['row' => $rowNum, 'errors' => ['Error al insertar en la base de datos']];
+                continue;
+            }
+
             $inserted++;
+            $seen_emails[] = $email_lower;
         }
 
         fclose($handle);
