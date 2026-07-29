@@ -4,6 +4,7 @@
 
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CRUD de Usuarios</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.11/css/dataTables.bootstrap.min.css">
@@ -12,7 +13,7 @@
 
 <body>
     <hr>
-    <div class="container">
+    <div class="container-fluid">
         <div class="row">
             <div class="col-sm-8 col-sm-offset-2">
                 <div class="panel panel-success">

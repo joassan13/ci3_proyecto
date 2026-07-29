@@ -4,6 +4,7 @@
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CRUD de Usuarios</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.11/css/dataTables.bootstrap.min.css">
@@ -11,7 +12,7 @@
 </head>
 
 <body>
-  <div class="container">
+  <div class="container-fluid">
     <h2 class="page-header">CRUD de Usuarios (AJAX + jQuery)</h2>
     <hr>
     <h3>Bienvenido, <?= $this->session->userdata('user')['first_name'] ?> <?= $this->session->userdata('user')['last_name'] ?>. ¿Qué deseas hacer?</h3>
@@ -55,10 +56,10 @@
     <h4>Gráficas</h4>
     <div class="row">
       <div class="col-sm-6">
-        <canvas id="genderChart" width="400" height="300"></canvas>
+        <canvas id="genderChart"></canvas>
       </div>
       <div class="col-sm-6">
-        <canvas id="totalChart" width="400" height="300"></canvas>
+        <canvas id="totalChart"></canvas>
       </div>
     </div>
     <hr>

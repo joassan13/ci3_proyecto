@@ -3,13 +3,14 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Iniciar sesión</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
 </head>
 <body>
-  <div class="container">
+  <div class="container-fluid">
     <div class="row">
-      <div class="col-sm-6 col-sm-offset-3" style="margin-top:40px">
+      <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" style="margin-top:40px">
         <div class="panel panel-primary">
           <div class="panel-heading"><h3 class="panel-title">Iniciar sesión</h3></div>
           <div class="panel-body">
